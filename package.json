@@ -1,0 +1,26 @@
+{
+  "name": "@adaptably/adapt",
+  "type": "module",
+  "version": "8.1.0",
+  "engines": {
+    "node": ">= 16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:adaptably/adapt.git"
+  },
+  "main": "module/adapt.load.auto.js",
+  "bin": {
+    "adapt": "bin/adapt.cli.js"
+  },
+  "scripts": {
+    "test": "mode=testing vitest run",
+    "tests:watch": "mode=testing vitest"
+  },
+  "dependencies": {
+    "pluralize": "^8.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^0.26.3"
+  }
+}

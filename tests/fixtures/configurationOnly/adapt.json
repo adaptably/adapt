@@ -1,0 +1,6 @@
+{
+  "keys": {
+    "dev": "value-dev",
+    "staging": "value-staging"
+  }
+}
