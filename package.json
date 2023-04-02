@@ -21,6 +21,6 @@
     "pluralize": "^8.0.0"
   },
   "devDependencies": {
-    "vitest": "^0.26.3"
+    "vitest": "^0.29.8"
   }
 }
