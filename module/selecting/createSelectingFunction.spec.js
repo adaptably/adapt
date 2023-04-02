@@ -10,317 +10,281 @@ const valid = {
 
 // --------------------------------------------
 
-describe('createSelectingFunction()', () => {
-  describe('without a configuration object', () => {
-    it('throws an error', () => {
-      expect(() => createSelectingFunction({}))
-        .toThrowError('Configuration was undefined')
-    })
+test('throws an error without a configuration object', () => {
+  expect(() => createSelectingFunction({}))
+    .toThrowError('Configuration was undefined')
+})
+
+// --------------------------------------------
+// Selecting Function
+
+test('selecting function throws an error without a selector', () => {
+  const adapt = createSelectingFunction(valid.options)
+  expect(() => adapt()).toThrowError('Selector was undefined')
+})
+
+test('selecting function throws an error when there is no matching selector', () => {
+  const configuration = {}
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration
   })
 
-  describe('with valid configuration', () => {
-    describe('the selecting function', () => {
-      describe('without a selector', () => {
-        it('throws an error', () => {
-          const adapt = createSelectingFunction(valid.options)
-          expect(() => adapt()).toThrowError('Selector was undefined')
-        })
-      })
+  expect(() => adapt('item'))
+    .toThrowError(`[adapt | 'item'] Could not find 'item' or 'items'`)
 
-      describe('with a selector which does not match the configuration', () => {
-        it('throws an error', () => {
-          const configuration = {}
+  expect(() => adapt('item.nested.thing'))
+    .toThrowError(`[adapt | 'item.nested.thing'] Could not find 'item' or 'items'`)
+})
 
-          const adapt = createSelectingFunction({
-            ...valid.options,
-            configuration
-          })
+test('selecting function returns the value of a selector when there is a matching selector', () => {
+  const configuration = {
+    root: 'root',
 
-          expect(() => adapt('item'))
-            .toThrowError(`[adapt | 'item'] Could not find 'item' or 'items'`)
+    nestedOne: {
+      key: 'nested-one',
 
-          expect(() => adapt('item.nested.thing'))
-            .toThrowError(`[adapt | 'item.nested.thing'] Could not find 'item' or 'items'`)
-        })
-      })
+      nestedTwo: {
+        key: 'nested-two'
+      }
+    }
+  }
 
-      describe('with a valid selector', () => {
-        describe('which matches a normal key', () => {
-          it('returns the value of the normal key', () => {
-            const configuration = {
-              root: 'root',
-
-              nestedOne: {
-                key: 'nested-one',
-
-                nestedTwo: {
-                  key: 'nested-two'
-                }
-              }
-            }
-
-            const adapt = createSelectingFunction({
-              ...valid.options,
-              configuration
-            })
-
-            const root = adapt('root')
-            expect(root).to.eq('root')
-
-            const nestedOne = adapt('nestedOne.key')
-            expect(nestedOne).to.eq('nested-one')
-
-            const nestedTwo = adapt('nestedOne.nestedTwo.key')
-            expect(nestedTwo).to.eq('nested-two')
-          })
-        })
-
-        describe('which matches an Adaptive Object', () => {
-          describe('without a key that matches the mode', () => {
-            describe('with a default key', () => {
-              it('returns the value of the default key', () => {
-                const configuration = {
-                  roots: {
-                    _default: 'root-default',
-                    dev: 'root-dev',
-                    staging: 'root-staging'
-                  }
-                }
-
-                const adapt = createSelectingFunction({
-                  ...valid.options,
-                  configuration,
-                  mode: 'production'
-                })
-
-                expect(adapt('root')).toEqual('root-default')
-              })
-            })
-
-            describe('without a default key', () => {
-              it('throws an error', () => {
-                const configuration = {
-                  roots: {
-                    dev: 'root-dev',
-                    staging: 'root-staging'
-                  }
-                }
-
-                const adapt = createSelectingFunction({
-                  ...valid.options,
-                  configuration,
-                  mode: 'production'
-                })
-
-                expect(() => adapt('root'))
-                  .toThrowError(`[adapt | 'root'] Could not find a 'production' or '_default' key in 'roots'`)
-              })
-            })
-          })
-
-          describe('with a key that matches the mode', () => {
-            it('returns the value matching the mode', () => {
-              const configuration = {
-                roots: {
-                  dev: 'root-dev',
-                  staging: 'root-staging'
-                },
-
-                nested: {
-                  items: {
-                    dev: 'nested-dev',
-                    staging: 'nested-staging'
-                  }
-                }
-              }
-
-              const adapt = createSelectingFunction({
-                ...valid.options,
-                configuration,
-                mode: 'staging'
-              })
-
-              const root = adapt('root')
-              expect(root).to.eq('root-staging')
-
-              const nested = adapt('nested.item')
-              expect(nested).to.eq('nested-staging')
-            })
-          })
-        })
-      })
-
-      describe('with a valid selector which includes an Adaptive Reference', () => {
-        describe('when the reference(s) cannot be found in the configuration', () => {
-          it('throws an error', () => {
-            const configuration = {
-              root: 'hello-{reference}'
-            }
-
-            const adapt = createSelectingFunction({
-              ...valid.options,
-              configuration,
-              environment: {}
-            })
-
-            expect(() => adapt('root'))
-              .toThrowError(`[adapt | 'root'] Could not find 'reference' or 'references' in the configuration.`)
-          })
-        })
-
-        describe('when the reference(s) can be found in the configuration', () => {
-          it('replaces all matching Adaptive References', () => {
-            const configuration = {
-              joined: '{firstWord}-{secondWord}-{nested.thirdWord}',
-              firstWord: 'hello',
-
-              secondWords: {
-                dev: 'world'
-              },
-
-              nested: {
-                thirdWords: {
-                  dev: 'foo'
-                }
-              }
-            }
-
-            const adapt = createSelectingFunction({
-              ...valid.options,
-              configuration,
-              environment: {},
-              mode: 'dev'
-            })
-
-            expect(adapt('joined')).toEqual('hello-world-foo')
-          })
-        })
-      })
-
-      describe('with a valid selector which includes an Adaptive Value', () => {
-        describe('when the value(s) cannot be found in the environment', () => {
-          it('throws an error', () => {
-            const configuration = {
-              root: 'hello-[word]'
-            }
-
-            const environment = {}
-
-            const adapt = createSelectingFunction({
-              ...valid.options,
-              configuration,
-              environment
-            })
-
-            expect(() => adapt('root'))
-              .toThrowError(`[adapt | 'root'] Could not find 'word' from 'hello-[word]' within the environment.`)
-          })
-        })
-
-        describe('when the value(s) can be found in the environment', () => {
-          it('replaces all matching Adaptive Values', () => {
-            const configuration = {
-              root: '[word1]-[word2]',
-              number: '[number]',
-              joined: '[word1]-[number]'
-            }
-
-            const environment = {
-              word1: 'hello',
-              word2: 'world',
-              number: 1
-            }
-
-            const adapt = createSelectingFunction({
-              ...valid.options,
-              configuration,
-              environment
-            })
-
-            expect(adapt('root')).toEqual('hello-world')
-            expect(adapt('number')).toEqual('1')
-            expect(adapt('joined')).toEqual('hello-1')
-          })
-        })
-
-        describe('when the Adaptive Value contains an Adaptive Object', () => {
-          describe('and the value(s) matching the mode cannot be found in the environment', () => {
-            describe('with a default key', () => {
-              it('returns the value of the default key', () => {
-                const configuration = {
-                  root: 'hello-[word]'
-                }
-
-                const environment = {
-                  word: {
-                    _default: 'word-default',
-                    dev: 'word-dev'
-                  }
-                }
-
-                const adapt = createSelectingFunction({
-                  ...valid.options,
-                  configuration,
-                  environment,
-                  mode: 'staging'
-                })
-
-                expect(adapt('root')).toEqual('hello-word-default')
-              })
-            })
-
-            describe('without a default key', () => {
-              it('throws an error', () => {
-                const configuration = {
-                  root: 'hello-[word]'
-                }
-
-                const environment = {
-                  word: {
-                    dev: 'word-dev'
-                  }
-                }
-
-                const adapt = createSelectingFunction({
-                  ...valid.options,
-                  configuration,
-                  environment,
-                  mode: 'staging'
-                })
-
-                expect(() => adapt('root'))
-                  .toThrowError(`[adapt | 'root'] Could not find a 'staging' or '_default' key in 'word'.`)
-              })
-            })
-          })
-
-          describe('and the value(s) matching the mode can be found in the environment', () => {
-            it('replaces all matching Adaptive Values with Adaptive Object values', () => {
-              const configuration = {
-                root: 'hello-[word1]-[word2]'
-              }
-
-              const environment = {
-                word1: {
-                  dev: 'word1-dev',
-                  staging: 'word1-dev'
-                },
-
-                word2: 'word2-dev'
-              }
-
-              const adapt = createSelectingFunction({
-                ...valid.options,
-                configuration,
-                environment,
-                mode: 'dev'
-              })
-
-              expect(adapt('root')).toEqual('hello-word1-dev-word2-dev')
-            })
-          })
-        })
-      })
-    })
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration
   })
+
+  const root = adapt('root')
+  expect(root).to.eq('root')
+
+  const nestedOne = adapt('nestedOne.key')
+  expect(nestedOne).to.eq('nested-one')
+
+  const nestedTwo = adapt('nestedOne.nestedTwo.key')
+  expect(nestedTwo).to.eq('nested-two')
+})
+
+// --------------------------------------------
+// Selecting Function: Adaptive Objects
+
+test('Adaptive Objects: selecting function throws an error when there is no matching mode key and no default key', () => {
+  const configuration = {
+    roots: {
+      dev: 'root-dev',
+      staging: 'root-staging'
+    }
+  }
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration,
+    mode: 'production'
+  })
+
+  expect(() => adapt('root'))
+    .toThrowError(`[adapt | 'root'] Could not find a 'production' or '_default' key in 'roots'`)
+})
+
+test('Adaptive Objects: selecting function returns the value of the default key when there is no matching mode key', () => {
+  const configuration = {
+    roots: {
+      _default: 'root-default',
+      dev: 'root-dev',
+      staging: 'root-staging'
+    }
+  }
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration,
+    mode: 'production'
+  })
+
+  expect(adapt('root')).toEqual('root-default')
+})
+
+test('Adaptive Objects: selecting function returns the value of the matching mode key', () => {
+  const configuration = {
+    roots: {
+      dev: 'root-dev',
+      staging: 'root-staging'
+    },
+
+    nested: {
+      items: {
+        dev: 'nested-dev',
+        staging: 'nested-staging'
+      }
+    }
+  }
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration,
+    mode: 'staging'
+  })
+
+  const root = adapt('root')
+  expect(root).to.eq('root-staging')
+
+  const nested = adapt('nested.item')
+  expect(nested).to.eq('nested-staging')
+})
+
+// --------------------------------------------
+// Selecting Function: Adaptive References
+
+test('Adaptive References: selecting function throws an error without a matching reference', () => {
+  const configuration = {
+    root: 'hello-{reference}'
+  }
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration,
+    environment: {}
+  })
+
+  expect(() => adapt('root'))
+    .toThrowError(`[adapt | 'root'] Could not find 'reference' or 'references' in the configuration.`)
+})
+
+test('Adaptive References: selecting function replaces all matching references', () => {
+  const configuration = {
+    joined: '{firstWord}-{secondWord}-{nested.thirdWord}',
+    firstWord: 'hello',
+
+    secondWords: {
+      dev: 'world'
+    },
+
+    nested: {
+      thirdWords: {
+        dev: 'foo'
+      }
+    }
+  }
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration,
+    environment: {},
+    mode: 'dev'
+  })
+
+  expect(adapt('joined')).toEqual('hello-world-foo')
+})
+
+// --------------------------------------------
+// Selecting Function: Adaptive Values
+
+test('Adaptive Values: selecting function throws an error without a matching environment value', () => {
+  const configuration = {
+    root: 'hello-[word]'
+  }
+
+  const environment = {}
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration,
+    environment
+  })
+
+  expect(() => adapt('root'))
+    .toThrowError(`[adapt | 'root'] Could not find 'word' from 'hello-[word]' within the environment.`)
+})
+
+test('Adaptive Values: selecting function replaces matching environment values', () => {
+  const configuration = {
+    root: '[word1]-[word2]',
+    number: '[number]',
+    joined: '[word1]-[number]'
+  }
+
+  const environment = {
+    word1: 'hello',
+    word2: 'world',
+    number: 1
+  }
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration,
+    environment
+  })
+
+  expect(adapt('root')).toEqual('hello-world')
+  expect(adapt('number')).toEqual('1')
+  expect(adapt('joined')).toEqual('hello-1')
+})
+
+test('Adaptive Values: selecting function throws an error when the matching environment value has no matching mode key and no default key', () => { 
+  const configuration = {
+    root: 'hello-[word]'
+  }
+
+  const environment = {
+    word: {
+      dev: 'word-dev'
+    }
+  }
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration,
+    environment,
+    mode: 'staging'
+  })
+
+  expect(() => adapt('root'))
+    .toThrowError(`[adapt | 'root'] Could not find a 'staging' or '_default' key in 'word'.`)
+})
+
+test('Adaptive Values: selecting function replaces matching values with the default key when the matching environment value is an Adaptive Object without a matching mode key', () =>{
+  const configuration = {
+    root: 'hello-[word]'
+  }
+
+  const environment = {
+    word: {
+      _default: 'word-default',
+      dev: 'word-dev'
+    }
+  }
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration,
+    environment,
+    mode: 'staging'
+  })
+
+  expect(adapt('root')).toEqual('hello-word-default')
+})
+
+test('Adaptive Values: selecting function replaces matching values when the matching environment value is an Adaptive Object with a matching mode key', () => {
+  const configuration = {
+    root: 'hello-[word1]-[word2]'
+  }
+
+  const environment = {
+    word1: {
+      dev: 'word1-dev',
+      staging: 'word1-dev'
+    },
+
+    word2: 'word2-dev'
+  }
+
+  const adapt = createSelectingFunction({
+    ...valid.options,
+    configuration,
+    environment,
+    mode: 'dev'
+  })
+
+  expect(adapt('root')).toEqual('hello-word1-dev-word2-dev')
 })

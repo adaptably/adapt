@@ -4,86 +4,74 @@ import loadAdapt from './adapt.load.js'
 
 // --------------------------------------------
 
-describe('Integration: Manually Loading Configuration Files', () => {
-  describe('without a configuration directory', () => {
-    it('throws an error', () => {
-      expect(() => loadAdapt({}))
-        .toThrowError('configuration directory')
-    })
-  })
+test('throws an error when not given a configuration directory', () => {
+  expect(() => loadAdapt({}))
+    .toThrowError('configuration directory')
+})
 
-  describe('without a valid configuration directory', () => {
-    it('throws an error', () => {
-      expect(() => loadAdapt({ configurationDirectory: 'non/existent/dir' }))
-        .toThrowError('could not be found')
-    })
-  })
+test('throws an error when given an invalid configuration directory', () => {
+  expect(() => loadAdapt({ configurationDirectory: 'non/existent/dir' }))
+    .toThrowError('could not be found')
+})
 
-  describe('with a valid configuration directory', () => {
-    describe('with only a configuration file', () => {
-      it('gathers configuration from configuration directory in mode from process.env', () => {
-        const originalMode = process.env.mode
-        process.env.mode = 'dev'
+test('gathers configuration from configuration directory in mode from process.env when given only a configuration file', () => {
+  const originalMode = process.env.mode
+  process.env.mode = 'dev'
 
-        // --------------------------------------------
+  // --------------------------------------------
 
-        const configurationDirectory = resolve(process.cwd(), 'tests/fixtures/configurationOnly')
+  const configurationDirectory = resolve(process.cwd(), 'tests/fixtures/configurationOnly')
 
-        const adapt = loadAdapt({ configurationDirectory })
-        expect(adapt('key')).toEqual('value-dev')
+  const adapt = loadAdapt({ configurationDirectory })
+  expect(adapt('key')).toEqual('value-dev')
 
-        // --------------------------------------------
+  // --------------------------------------------
 
-        process.env.mode = originalMode
-      })
-    })
+  process.env.mode = originalMode
+})
 
-    describe('with a configuration file and an environment file', () => {
-      it('gathers configuration from configuration directory in mode from process.env', () => {
-        const originalMode = process.env.mode
-        process.env.mode = 'dev'
+test('gathers configuration from configuration directory in mode from process.env when given an environment file', () => {
+  const originalMode = process.env.mode
+  process.env.mode = 'dev'
 
-        // --------------------------------------------
+  // --------------------------------------------
 
-        const configurationDirectory = resolve(process.cwd(), 'tests/fixtures/withEnvironment')
+  const configurationDirectory = resolve(process.cwd(), 'tests/fixtures/withEnvironment')
 
-        const adapt = loadAdapt({ configurationDirectory })
-        expect(adapt('key')).toEqual('value-dev')
+  const adapt = loadAdapt({ configurationDirectory })
+  expect(adapt('key')).toEqual('value-dev')
 
-        // --------------------------------------------
+  // --------------------------------------------
 
-        process.env.mode = originalMode
-      })
+  process.env.mode = originalMode
+})
 
-      it('includes environment variables in process.env', () => {
-        process.env.KEY_FROM_PROCESS = 'process-value'
+test('includes environment variables in process.env when given an environment file', () => {
+  process.env.KEY_FROM_PROCESS = 'process-value'
 
-        // --------------------------------------------
+  // --------------------------------------------
 
-        const configurationDirectory = resolve(process.cwd(), 'tests/fixtures/withEnvironment')
+  const configurationDirectory = resolve(process.cwd(), 'tests/fixtures/withEnvironment')
 
-        const adapt = loadAdapt({ configurationDirectory })
-        expect(adapt('keyFromProcess')).toEqual('process-value')
+  const adapt = loadAdapt({ configurationDirectory })
+  expect(adapt('keyFromProcess')).toEqual('process-value')
 
-        // --------------------------------------------
+  // --------------------------------------------
 
-        delete process.env.KEY_FROM_PROCESS
-      })
+  delete process.env.KEY_FROM_PROCESS
+})
 
-      it('prioritizes environment file values above process.env values', () => {
-        process.env.DUPLICATE_KEY = 'in-process'
+test('prioritizes environment file values above process.env values when given an environment file', () => {
+  process.env.DUPLICATE_KEY = 'in-process'
 
-        // --------------------------------------------
+  // --------------------------------------------
 
-        const configurationDirectory = resolve(process.cwd(), 'tests/fixtures/withEnvironment')
+  const configurationDirectory = resolve(process.cwd(), 'tests/fixtures/withEnvironment')
 
-        const adapt = loadAdapt({ configurationDirectory })
-        expect(adapt('duplicateKey')).toEqual('in-file')
+  const adapt = loadAdapt({ configurationDirectory })
+  expect(adapt('duplicateKey')).toEqual('in-file')
 
-        // --------------------------------------------
+  // --------------------------------------------
 
-        delete process.env.DUPLICATE_KEY
-      })
-    })
-  })
+  delete process.env.DUPLICATE_KEY
 })
