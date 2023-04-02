@@ -168,14 +168,20 @@ describe('createSelectingFunction()', () => {
           })
         })
 
-        describe('when the value(s) can be found in the environment', () => {
+        describe('when the reference(s) can be found in the configuration', () => {
           it('replaces all matching Adaptive References', () => {
             const configuration = {
-              joined: '{firstWord}-{secondWord}',
+              joined: '{firstWord}-{secondWord}-{nested.thirdWord}',
               firstWord: 'hello',
 
               secondWords: {
                 dev: 'world'
+              },
+
+              nested: {
+                thirdWords: {
+                  dev: 'foo'
+                }
               }
             }
 
@@ -186,7 +192,7 @@ describe('createSelectingFunction()', () => {
               mode: 'dev'
             })
 
-            expect(adapt('joined')).toEqual('hello-world')
+            expect(adapt('joined')).toEqual('hello-world-foo')
           })
         })
       })

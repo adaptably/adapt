@@ -74,7 +74,7 @@ function select({ data, environment, mode, selector, selectorOriginal }) {
     matches.forEach(match => {
       const referenceSelector = match.replace(/(\{|\})/g, '')
 
-      const replacement = select({
+      const replacement = search({
         data,
         environment,
         mode,
